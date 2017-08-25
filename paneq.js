@@ -16,7 +16,19 @@ const h = canvas.height;
 
 // Audio
 
-const actx = new window.AudioContext();
+const actx = new AudioContext();
+const splitter = actx.createChannelSplitter(2);
+const lAnalyser = actx.createAnalyser();
+const lArray = new Uint8Array(lAnalyser.frequencyBinCount);
+const rAnalyser = actx.createAnalyser();
+const rArray = new Uint8Array(rAnalyser.frequencyBinCount);
+const merger = actx.createChannelMerger(2);
+
+splitter.connect(lAnalyser, 0, 0);
+splitter.connect(rAnalyser, 1, 0);
+lAnalyser.connect(merger, 0, 0);
+rAnalyser.connect(merger, 0, 1);
+merger.connect(actx.destination);
 
 const loadSound = (url, cb) => {
     const request = new XMLHttpRequest();
@@ -33,15 +45,15 @@ const loadSound = (url, cb) => {
     console.log("Loading: " + url);
 };
 
-const playSound = (buffer) => {
-    let src = actx.createBufferSource();
-    src.buffer = buffer;
-    src.connect(actx.destination);
-    src.start(start, 0, 1);
+$('play').onclick = () => {
+    const url = $('sound').value;
+    loadSound(url, (buffer) => {
+        const src = actx.createBufferSource();
+        src.buffer = buffer;
+        src.connect(splitter);
+        src.start();
+    });
 };
-
-$('')
-
 
 function drawCenterLine() {
     gctx.strokeStyle = 'black';
@@ -53,7 +65,19 @@ function drawCenterLine() {
 }
 
 function draw() {
+    gctx.clearRect(0, 0, w, h);
     drawCenterLine();
+
+    lAnalyser.getByteFrequencyData(lArray);
+    const barCount = lAnalyser.frequencyBinCount;
+    const barHeight = (h / barCount) * 1.26;
+    for (let i = 0; i < barCount; i++) {
+        const barWidth = lArray[i] / 2;
+        gctx.fillStyle = 'rgb(50,' + (barWidth + 100) + ',50)';
+        gctx.fillRect((w / 2) - barWidth, i * barHeight, barWidth, barHeight);
+    }
+
+    requestAnimationFrame(draw);
 }
 
 function main() {
