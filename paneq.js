@@ -9,7 +9,7 @@ const $ = (id) => document.getElementById(id);
 
 // Graphics
 
-const canvas = $("canvas");
+const canvas = $('canvas');
 const gctx = canvas.getContext('2d');
 const w = canvas.width;
 const h = canvas.height;
@@ -17,6 +17,30 @@ const h = canvas.height;
 // Audio
 
 const actx = new window.AudioContext();
+
+const loadSound = (url, cb) => {
+    const request = new XMLHttpRequest();
+    request.open('GET', url, true);
+    request.responseType = 'arraybuffer';
+    request.onload = () => {
+        actx.decodeAudioData(
+            request.response,
+            cb,
+            () => { alert("error loading audio"); }
+        );
+    };
+    request.send();
+    console.log("Loading: " + url);
+};
+
+const playSound = (buffer) => {
+    let src = actx.createBufferSource();
+    src.buffer = buffer;
+    src.connect(actx.destination);
+    src.start(start, 0, 1);
+};
+
+$('')
 
 
 function drawCenterLine() {

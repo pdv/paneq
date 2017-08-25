@@ -1,19 +1,40 @@
 <!DOCTYPE html>
 <title>Paneq</title>
-<canvas id="canvas"></canvas>
+
+<div id="container">
+  <div id="controls">
+    <select id="sound">
+      <option value="tunes">tunes</option>
+    </select>
+    <button id="play">Play</button>
+  </div>
+  <canvas id="canvas"></canvas>
+</div>
+
 <script src="paneq.js"></script>
+
 <style>
- body {
-     margin: 0;
- }
- #canvas {
-     width: 400px;
-     height: 800px;
-     position: absolute;
-     left: 50%;
-     top: 50%;
-     -webkit-transform: translate(-50%, -50%);
-     transform: translate(-50%, -50%);
-     backgroundColor: red;
- }
+
+body {
+    margin: 0;
+}
+
+#container {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+}
+
+#controls {
+    display: block;
+}
+
+#canvas {
+    display: block;
+    width: 400px;
+    height: 800px;
+}
+
 </style>
