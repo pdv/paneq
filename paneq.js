@@ -57,6 +57,8 @@ $('play').onclick = () => {
 const lFilters = createFilters();
 const rFilters = createFilters();
 
+
+// Really these filters should be at octaves, but the visualizer is linear so ¯\_(ツ)_/¯
 function createFilters() {
     const filters = [];
     let freq = 16000;
@@ -66,7 +68,7 @@ function createFilters() {
     highShelf.frequency.value = freq;
     filters[0] = highShelf;
     for (let i = 1; i < NUM_DOTS - 1; i++) {
-        freq /= 2;
+        freq -= (16000 - 20) / NUM_DOTS;
         console.log(freq);
         const filter = actx.createBiquadFilter();
         filter.type = 'peaking';
@@ -74,7 +76,7 @@ function createFilters() {
         filters[i - 1].connect(filter);
         filters[i] = filter;
     }
-    freq /= 2;
+    freq -= (16000 - 20) / NUM_DOTS;
     console.log(freq);
     const lowShelf = actx.createBiquadFilter();
     lowShelf.type = 'lowshelf';
@@ -151,8 +153,8 @@ function mousemove(e) {
         const mousePos = getMousePos(canvas, e);
         const normalized = (mousePos[0] - (w/2)) / (w/2);
         filters[selectedFilter] = normalized;
-        lFilters[selectedFilter].gain.value = -(normalized * 40);
-        rFilters[selectedFilter].gain.value = normalized * 40;
+        lFilters[selectedFilter].gain.value = -(normalized * 20);
+        rFilters[selectedFilter].gain.value = normalized * 20;
     }
 }
 
