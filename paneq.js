@@ -55,32 +55,67 @@ $('play').onclick = () => {
     });
 };
 
+const NUM_DOTS = 15;
+const DOT_RADIUS = 5;
+
+let dots;
+
+function getDotLocations() {
+    const dots = [];
+    const useableHeight = h - (DOT_RADIUS * 2);
+    const gap = useableHeight / (NUM_DOTS - 1);
+    for (let i = 0; i < NUM_DOTS; i++) {
+        dots.push([w/2, i * gap + DOT_RADIUS]);
+    }
+    return dots;
+}
+
 function drawCenterLine() {
-    gctx.strokeStyle = 'black';
-    gctx.lineWidth = 2;
+    gctx.strokeStyle = 'rgb(111, 85, 4)';
     gctx.beginPath();
-    gctx.moveTo(w / 2, 0);
-    gctx.lineTo(w / 2, h);
+    gctx.moveTo(dots[0][0], dots[0][1]);
+    for (var i = 1; i < dots.length - 2; i++) {
+        const xc = (dots[i][0] + dots[i + 1][0]) / 2;
+        const yc = (dots[i][1] + dots[i + 1][1]) / 2;
+        gctx.quadraticCurveTo(dots[i][0], dots[i][1], xc, yc);
+    }
+    gctx.quadraticCurveTo(dots[i][0], dots[i][1], dots[i+1][0], dots[i+1][1]);
     gctx.stroke();
+
+    gctx.fillStyle = 'rgb(211, 8, 4)';
+    for (let i = 0; i < dots.length; i++) {
+        gctx.beginPath();
+        gctx.arc(dots[i][0], dots[i][1], DOT_RADIUS, 0, 2 * Math.PI);
+        gctx.fill();
+    };
 }
 
 function draw() {
     gctx.clearRect(0, 0, w, h);
-    drawCenterLine();
 
     lAnalyser.getByteFrequencyData(lArray);
+    rAnalyser.getByteFrequencyData(rArray);
     const barCount = lAnalyser.frequencyBinCount;
     const barHeight = (h / barCount) * 1.26;
     for (let i = 0; i < barCount; i++) {
-        const barWidth = lArray[i] / 2;
-        gctx.fillStyle = 'rgb(50,' + (barWidth + 100) + ',50)';
-        gctx.fillRect((w / 2) - barWidth, i * barHeight, barWidth, barHeight);
+        const lBarWidth = lArray[i] / 2;
+        gctx.fillStyle = 'rgb(50,' + (lBarWidth + 100) + ',50)';
+        gctx.fillRect((w / 2) - lBarWidth, h - (i * barHeight), lBarWidth, barHeight);
     }
+
+    for (let i = 0; i < barCount; i++) {
+        const rBarWidth = rArray[i] / 2;
+        gctx.fillStyle = 'rgb(50, 50,' + (rBarWidth + 100) + ')';
+        gctx.fillRect(w / 2, h - (i * barHeight), rBarWidth, barHeight);
+    }
+
+    drawCenterLine();
 
     requestAnimationFrame(draw);
 }
 
 function main() {
+    dots = getDotLocations();
     draw();
 }
 
