@@ -7,6 +7,8 @@
 
 const $ = (id) => document.getElementById(id);
 
+const NUM_DOTS = 10;
+const DOT_RADIUS = 5;
 
 // Graphics
 
@@ -25,12 +27,6 @@ const lArray = new Uint8Array(lAnalyser.frequencyBinCount);
 const rAnalyser = actx.createAnalyser();
 const rArray = new Uint8Array(rAnalyser.frequencyBinCount);
 const merger = actx.createChannelMerger(2);
-
-splitter.connect(lAnalyser, 0, 0);
-splitter.connect(rAnalyser, 1, 0);
-lAnalyser.connect(merger, 0, 0);
-rAnalyser.connect(merger, 0, 1);
-merger.connect(actx.destination);
 
 const loadSound = (url, cb) => {
     const request = new XMLHttpRequest();
@@ -57,11 +53,49 @@ $('play').onclick = () => {
     });
 };
 
+// hi to low, yeah whatever
+const lFilters = createFilters();
+const rFilters = createFilters();
+
+function createFilters() {
+    const filters = [];
+    let freq = 16000;
+    console.log(freq);
+    const highShelf = actx.createBiquadFilter();
+    highShelf.type = 'highshelf';
+    highShelf.frequency.value = freq;
+    filters[0] = highShelf;
+    for (let i = 1; i < NUM_DOTS - 1; i++) {
+        freq /= 2;
+        console.log(freq);
+        const filter = actx.createBiquadFilter();
+        filter.type = 'peaking';
+        filter.frequency.value = freq;
+        filters[i - 1].connect(filter);
+        filters[i] = filter;
+    }
+    freq /= 2;
+    console.log(freq);
+    const lowShelf = actx.createBiquadFilter();
+    lowShelf.type = 'lowshelf';
+    lowShelf.frequency.value = freq;
+    filters[NUM_DOTS - 2].connect(lowShelf);
+    filters[NUM_DOTS - 1] = lowShelf;
+    return filters;
+}
+
+splitter.connect(lFilters[0], 0, 0);
+splitter.connect(rFilters[0], 1, 0);
+lFilters[NUM_DOTS - 1].connect(lAnalyser);
+rFilters[NUM_DOTS - 1].connect(rAnalyser);
+lAnalyser.connect(merger, 0, 0);
+rAnalyser.connect(merger, 0, 1);
+merger.connect(actx.destination);
+
 
 // Filters
 
-const NUM_DOTS = 15;
-const DOT_RADIUS = 5;
+
 const filters = initFilters();
 
 function initFilters() {
@@ -115,7 +149,10 @@ function mouseup(e) {
 function mousemove(e) {
     if (selectedFilter != null) {
         const mousePos = getMousePos(canvas, e);
-        filters[selectedFilter] = (mousePos[0] - (w/2)) / (w/2);
+        const normalized = (mousePos[0] - (w/2)) / (w/2);
+        filters[selectedFilter] = normalized;
+        lFilters[selectedFilter].gain.value = -(normalized * 40);
+        rFilters[selectedFilter].gain.value = normalized * 40;
     }
 }
 
