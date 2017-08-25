@@ -7,12 +7,14 @@
 
 const $ = (id) => document.getElementById(id);
 
+
 // Graphics
 
 const canvas = $('canvas');
 const gctx = canvas.getContext('2d');
 const w = canvas.width;
 const h = canvas.height;
+
 
 // Audio
 
@@ -55,23 +57,80 @@ $('play').onclick = () => {
     });
 };
 
+
+// Filters
+
 const NUM_DOTS = 15;
 const DOT_RADIUS = 5;
+const filters = initFilters();
 
-let dots;
+function initFilters() {
+    const filters = [];
+    for (let i = 0; i < NUM_DOTS; i++) {
+        filters.push(0);
+    }
+    return filters;
+}
 
 function getDotLocations() {
     const dots = [];
     const useableHeight = h - (DOT_RADIUS * 2);
     const gap = useableHeight / (NUM_DOTS - 1);
     for (let i = 0; i < NUM_DOTS; i++) {
-        dots.push([w/2, i * gap + DOT_RADIUS]);
+        dots.push([(w/2) + (filters[i] * (w/2)), i * gap + DOT_RADIUS]);
     }
     return dots;
 }
 
-function drawCenterLine() {
-    gctx.strokeStyle = 'rgb(111, 85, 4)';
+
+// Mouse
+
+let selectedFilter = null;
+
+function dist(a, b) {
+    return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2);
+}
+
+function getMousePos(canvas, event) {
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    return [x, y];
+}
+
+function mousedown(e) {
+    const dots = getDotLocations();
+    const mousePos = getMousePos(canvas, e);
+    for (let i = 0; i < dots.length; i++) {
+        if (dist(mousePos, dots[i]) < (DOT_RADIUS * 2)) {
+            selectedFilter = i;
+        }
+    }
+}
+
+function mouseup(e) {
+    selectedFilter = null;
+}
+
+function mousemove(e) {
+    if (selectedFilter != null) {
+        const mousePos = getMousePos(canvas, e);
+        filters[selectedFilter] = (mousePos[0] - (w/2)) / (w/2);
+    }
+}
+
+document.addEventListener('mousedown', mousedown, false);
+document.addEventListener('mousemove', mousemove, false);
+document.addEventListener('mouseup', mouseup, false);
+
+
+// Draw
+
+function drawCurve() {
+    const dots = getDotLocations();
+
+    gctx.strokeStyle = 'rgb(211, 8, 4)';
+    gctx.lineWidth = 3;
     gctx.beginPath();
     gctx.moveTo(dots[0][0], dots[0][1]);
     for (var i = 1; i < dots.length - 2; i++) {
@@ -90,33 +149,30 @@ function drawCenterLine() {
     };
 }
 
-function draw() {
-    gctx.clearRect(0, 0, w, h);
-
-    lAnalyser.getByteFrequencyData(lArray);
-    rAnalyser.getByteFrequencyData(rArray);
+function drawBars() {
     const barCount = lAnalyser.frequencyBinCount;
     const barHeight = (h / barCount) * 1.26;
+
+    lAnalyser.getByteFrequencyData(lArray);
     for (let i = 0; i < barCount; i++) {
         const lBarWidth = lArray[i] / 2;
         gctx.fillStyle = 'rgb(50,' + (lBarWidth + 100) + ',50)';
         gctx.fillRect((w / 2) - lBarWidth, h - (i * barHeight), lBarWidth, barHeight);
     }
 
+    rAnalyser.getByteFrequencyData(rArray);
     for (let i = 0; i < barCount; i++) {
         const rBarWidth = rArray[i] / 2;
         gctx.fillStyle = 'rgb(50, 50,' + (rBarWidth + 100) + ')';
         gctx.fillRect(w / 2, h - (i * barHeight), rBarWidth, barHeight);
     }
+}
 
-    drawCenterLine();
-
+function draw() {
+    gctx.clearRect(0, 0, w, h);
+    drawBars();
+    drawCurve();
     requestAnimationFrame(draw);
 }
 
-function main() {
-    dots = getDotLocations();
-    draw();
-}
-
-window.onload = main;
+window.onload = draw;
